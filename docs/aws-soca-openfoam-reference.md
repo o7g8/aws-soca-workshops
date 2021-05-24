@@ -58,23 +58,22 @@ Console.
 
 # Configure Compute Node AMI
 
-1. Download Intel(r) MPI for Linux from https://software.seek.intel.com/performance-libraries .
-    1. Click on "Component Binary Packages -- M".
-    2. Click on "Intel MPI Library for Linux Version 2021.2.0 156 MB" to download the distribution `l_mpi_oneapi_p_2021.2.0.215_offline.sh`.
-    3. Newer versions may work with the software packages used in this
-       workshop. However, the testing was performed with 2021.2.0.215. Also,
-       using a newer version will require changing the paths for Intel MPI
-       in the OpenFOAM application profile form. Older versions are NOT
-       recommended.
-2. Follow the instructions at https://awslabs.github.io/scale-out-computing-on-aws/tutorials/reduce-compute-node-launch-time-with-custom-ami/ to create an AMI.
+1. Follow the instructions at https://awslabs.github.io/scale-out-computing-on-aws/tutorials/reduce-compute-node-launch-time-with-custom-ami/ to create an AMI.
     1. Choose Amazon Linux 2 HVM x86 AMI.
     2. Instance type c5.4xlarge is recommended. Any c5 or m5 machine will be fine.
     3. Choose a security group that has ssh access.
     4. Steps in section 3 are optional.
     5. Stop before proceeding to section 4.
     6. Copy the machine instance's public IP address to a document for reference. This is the address that will be used for copying files to and logging into the machine.
-3. Download Intel MPI on the temporary machine `wget https://registrationcenter-download.intel.com/akdlm/irc_nas/17729/l_mpi_oneapi_p_2021.2.0.215_offline.sh`
-3. Copy `configure-temporary-machine-for-ami` and `l_mpi_oneapi_p_2021.2.0.215_offline.sh` to the temporary machine instance. Note that
+2. Download Intel MPI on the temporary machine `wget https://registrationcenter-download.intel.com/akdlm/irc_nas/17729/l_mpi_oneapi_p_2021.2.0.215_offline.sh`. In case you want to try a newer version of MPI go to https://software.seek.intel.com/performance-libraries
+    1. Click on "Component Binary Packages -- M".
+    2. Save the URL pointed by "Intel MPI Library for Linux Version 20XX.X.X" and  download the file on the temporary machine.
+    3. Newer versions may work with the software packages used in this
+       workshop. However, the testing was performed with `2021.2.0.215`. Also,
+       using a newer version will require changing the paths for Intel MPI
+       in the OpenFOAM application profile form. Older versions are NOT
+       recommended.
+3. Copy `configure-temporary-machine-for-ami` to the temporary machine instance. Note that
    the machine is configured to use the ssh key specified during the launch instance process and the
    user name is ec2-user.
 4. `$ sudo ./configure-temporary-machine-for-ami l_mpi_oneapi_p_2021.2.0.215_offline.sh --accept-eula`

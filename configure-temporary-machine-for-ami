@@ -40,7 +40,6 @@ if [ "$USER" != "root" ] ; then
     exit 1
 fi
 
-
 IMPI_EXE="$(realpath $IMPI_EXE)" || exit 1
 
 TEMPDIR=$(mktemp -d $PWD/installer.XXXX) || exit 1
