@@ -54,7 +54,7 @@ echo "Install lustre client 2.10"
 amazon-linux-extras install -y lustre2.10 || exit 1
 
 echo "Install IMPI $IMPI_EXE"
-"$IMPI_EXE" -a -s -c --eula accept --install_dir /opt/intel || exit 1
+"$IMPI_EXE" -a -s -c --eula accept --install-dir /opt/intel || exit 1
 
 echo "Install FreeCAD to $FREECAD_HOME"
 mkdir -p "$FREECAD_HOME" || exit 1
