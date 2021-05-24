@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Uses concepts from CFD Support A320.
+#
+
+cd ${0%/*} || exit 1    # Run from this directory
+
+if [ -z "$SUBDOMAINS" ] ; then
+       SUBDOMAINS="$(nproc)"
+fi
+
+if [ -z "$WM_PROJECT_DIR" ] ; then
+    echo "OpenFOAM environment not set" 1>&2
+    exit 1
+fi
+
+if [ -d motorBike-mesh ] ; then
+    echo "motorBike-mesh already exists" 1>&2
+    exit 1
+fi
+
+
+cp -rnT motorBike.org motorBike-mesh
+
+cd motorBike-mesh || exit 1
+time ./Allrun -s mesh -n $SUBDOMAINS
+exit $?

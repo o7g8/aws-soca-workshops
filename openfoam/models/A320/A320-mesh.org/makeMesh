@@ -1,0 +1,36 @@
+#!/bin/bash
+# --------------------------------------------------------------------------- #
+#   ==   ===  ==                                                              #
+#  ||   ||=  || ))  support s. r. o. 2014, www.cfdsupport.com                 #
+#   ==        ==                                                              #
+# --------------------------------------------------------------------------- #
+
+if [ ! -z "$SUBDOMAINS" ] ; then
+    NProc="$SUBDOMAINS"
+else
+    NProc="$(nproc)"
+fi
+
+if [ -z "$LOG_DIR" ] ; then
+    LOG_DIR="$(pwd)"
+fi
+
+sed -i "s/\(.*numberOfSubdomains[ \t]*\)[0-9].*;/numberOfSubdomains $NProc;/g" system/decomposeParDict
+
+# preparations
+echo " 1. create background mesh (blockMesh)"
+blockMesh | tee blockMesh.log > "$LOG_DIR/log.all"
+echo " 2. surface feature extract"
+surfaceFeatureExtract| tee surfaceFeatureEdges.log >> "$LOG_DIR/log.all"
+# mesh creation
+echo " 3. parallel decomposition"
+decomposePar -force | tee decomposePar.log >> "$LOG_DIR/log.all"
+echo " 4. mesh creation (snappyHexMesh, ${NProc} CPUs)"
+mpiexec -np ${NProc} snappyHexMesh -parallel | tee snappyHexMesh.log >> "$LOG_DIR/log.all"
+echo " 5. parallel reconstruction"
+reconstructParMesh -latestTime -mergeTol 1e-5 | tee reconstructParMesh.log >> "$LOG_DIR/log.all"
+echo " 6. check mesh"
+checkMesh -latestTime | tee checkMesh.log >> "$LOG_DIR/log.all"
+
+# create symbolic link for last timestep of the mesh creation process
+cp -rf 2 last

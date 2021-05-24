@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Configure a machine to build openfoam
+#
+
+IMPI_TARBALL=
+if [ $# -eq 2 -a "$2" = "--accept-impi-eula" ] ; then
+	IMPI_TARBALL="$1"
+else
+        echo "Usage: $0 IMPI_TAR_PATH --accept-impi-eula" 1>&2
+	exit 1
+fi
+
+if [ "$USER" != "root" ] ; then
+	echo "$0 must be run as root" 1>&2
+	exit 1
+fi
+
+TMPDIR="$(mktemp -d)"
+pushd "${TMPDIR}" || exit 1
+tar xf "${IMPI_TARBALL}" || exit 1
+IMPI_INST_DIR="$(find . -maxdepth 1 -type d -name 'l_mpi_*' | xargs realpath)"
+echo "IMPI_INST_DIR=${IMPI_INST_DIR}"
+cd "$IMPI_INST_DIR" || exit 1
+./install.sh --cli-mode --install_dir /opt/intel -s --accept_eula --cli-mode || exit 1
+popd
+
+yum groupinstall -y "Development Tools" || exit 1
+yum install -y qt-devel PyQt4-devel curl-devel bzip2-devel xz-devel mpfr-devel qt5-qttools-devel gnuplot qt5-qtx11extras-devel libXt-devel readline-devel ncurses-devel cmake3 tmux freeglut-devel webkitgtk4 webkitgtk4-devel fftw fftw-devel pigz || exit 1
+update-alternatives --install /usr/bin/cmake cmake "$(which cmake3)" 1 || exit 1
+
+

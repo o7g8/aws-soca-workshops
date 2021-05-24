@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Configure a scheduler node for the OpenFOAM application profile.
+#
+
+EXPECTED_SOCA_VERSION=2.5.0
+EXPECTED_BASE_OS=amazonlinux2
+
+SOCA_HOME="/apps/soca/$SOCA_CONFIGURATION"
+
+cd ${0%/*} || exit 1    # Run from this directory
+SCRIPT_DIR="$PWD"
+
+if ! pidof pbs_server.bin >> /dev/null ; then
+    echo "ERROR: No PID for pbs_server.bin." 1>&2
+    echo "This script must be executed on the scheduler node." 1>&2
+    exit 1
+fi
+
+if [ "$USER" != "root" ] ; then
+    echo "ERROR: $0 must be executed as root" 1>&2
+    exit 1
+fi
+
+if [ "$SOCA_VERSION" != "$EXPECTED_SOCA_VERSION" ] ; then
+    echo "WARNING: Expected SOCA version $EXPECTED_SOCA_VERSION, installed is $SOCA_VERSION"
+    echo "Continue (y/n)?"
+    read RSP
+    RSP="$(echo $RSP | tr '[A-Z]' '[a-z]')"
+    if [ "$RSP" != "y" ] ; then
+	echo "Quit"
+	exit 1
+    fi
+fi
+
+if [ "$SOCA_BASE_OS" != "$EXPECTED_BASE_OS" ] ; then
+    echo "WARNING: Expected SOCA base os $EXPECTED_BASE_OS, installed is $SOCA_BASE_OS"
+    echo "Continue (y/n)?"
+    read RSP
+    RSP="$(echo $RSP | tr '[A-Z]' '[a-z]')"
+    if [ "$RSP" != "y" ] ; then
+	echo "Quit"
+	exit 1
+    fi
+fi
+
+PACKAGES="perl-DBD-SQLite perl-Text-CSV_XS pigz python-virtualenv"
+echo "Install $PACKAGES"
+yum install -y $PACKAGES || exit 1
+
+echo "Install lustre client 2.10"
+amazon-linux-extras install -y lustre2.10 || exit 1
+
+echo "Stop cluster_web_ui"
+pushd "$SOCA_HOME/cluster_web_ui" || exit 1
+./socawebui.sh stop || exit 1
+
+echo "Patch SOCA"
+pushd "$SOCA_HOME" || exit 2
+
+patch -p2 < "$SCRIPT_DIR/soca/patches/job_output_path.patch"
+if [ $? -ne 0 ] ; then
+    echo "WARNING: soca_job_output-path.patch failed to apply. job_output_path will not be available in scripts."
+    echo "Continue (y/n)?"
+    read RSP
+    RSP="$(echo $RSP | tr '[A-Z]' '[a-z]')"
+    if [ "$RSP" != "y" ] ; then
+	echo "Quit"
+	exit 1
+    fi
+fi
+patch -p2 < "$SCRIPT_DIR/soca/patches/fixed_vcpus_check_limits.patch" || exit 1
+
+popd
+SQL_BK="$(mktemp db.sqlite.XXXXX)"
+echo "Backup db.sqlite to $SQL_BK"
+cp db.sqlite "$SQL_BK" || exit 1
+
+echo "Load OpenFOAM application profile to SOCA"
+"$SCRIPT_DIR/soca/import_app_profile" "$SCRIPT_DIR/openfoam/profiles/openfoam/profile.csv" "$SUDO_USER" || exit 1
+
+echo "Change desktop queue root size to 20GB"
+# This replaces the second match of root_size: "10"
+sed  -i ':a;N;$!ba; s/root_size:\s*"10"/root_size: "20"/2' "$SOCA_HOME/cluster_manager/settings/queue_mapping.yml" || exit 1
+
+echo "Start cluster_web_ui"
+./socawebui.sh start || exit 1
+
+echo "Configuration of $SOCA_CONFIGURATION $(hostname) complete"

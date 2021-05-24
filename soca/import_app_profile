@@ -1,0 +1,46 @@
+#!/bin/perl
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Import application profile from csv to SOCA db.
+#
+# Repeated executions for the same CSV data will create duplicate profiles.
+#
+
+use strict;
+use Cwd;
+use Text::CSV_XS;
+use DBI;
+
+if ($#ARGV != 1) {
+    die('Usage: import_app_profile PATH_TO_CSV USERNAME')
+}
+my $csv_path=$ARGV[0];
+my $creator=$ARGV[1];
+
+my $parser = Text::CSV_XS->new();
+my $soca_cfg = $ENV{'SOCA_CONFIGURATION'};
+
+open my $csv_fh, "<", $csv_path or die "$csv_path: $!";
+my $row = $parser->getline($csv_fh) or die "getline: $!";
+my ($app_name, $app_form, $app_script, $app_interpreter, $app_thumbnail) = 
+    ($row->[2], $row->[3], $row->[4], $row->[5], $row->[6]);
+close $csv_fh;
+
+my $dbh = DBI->connect('DBI:SQLite:dbname=' . '/apps/soca/' . $soca_cfg . '/cluster_web_ui/db.sqlite',
+		       '', '', {RaiseError=>1}) or die $DBI::errstr;
+my $sth = $dbh->prepare(qq(
+			INSERT INTO application_profiles
+			(creator, profile_name, profile_form, profile_job, profile_interpreter,
+			profile_thumbnail, created_on)
+			VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)))  or die $DBI::errstr;
+
+$sth->bind_param(1, $creator);
+$sth->bind_param(2, $app_name);
+$sth->bind_param(3, $app_form);
+$sth->bind_param(4, $app_script);
+$sth->bind_param(5, $app_interpreter);
+$sth->bind_param(6, $app_thumbnail);
+$sth->execute()  or die;
+
+$dbh->disconnect();

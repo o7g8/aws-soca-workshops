@@ -1,0 +1,25 @@
+commit 3d6bf36ef9e7712a235d969e3b9945757f067681
+Author: Brian T. Smith <bsmith@systemfabricworks.com>
+Date:   Tue Jul 21 18:38:10 2020 +0000
+
+    Add job_output_path to the variables replaced in a job script
+
+diff --git a/soca/cluster_web_ui/views/submit_job.py b/soca/cluster_web_ui/views/submit_job.py
+index 6b418dc..ed51223 100644
+--- a/soca/cluster_web_ui/views/submit_job.py
++++ b/soca/cluster_web_ui/views/submit_job.py
+@@ -134,6 +134,7 @@ def send_job():
+     for param in request.form:
+         if param != "csrf_token":
+             job_to_submit = job_to_submit.replace("%" + param + "%", request.form[param])
++    job_to_submit = job_to_submit.replace('%job_output_path%', config.Config.USER_HOME + "/" + session["user"] + "/soca_job_output")
+ 
+ 
+     payload = base64.b64encode(job_to_submit.encode()).decode()
+@@ -152,4 +153,4 @@ def send_job():
+     else:
+         flash("Error during job submission: " + str(send_to_to_queue.json()["message"]), "error")
+ 
+-    return redirect("/my_jobs")
+\ No newline at end of file
++    return redirect("/my_jobs")

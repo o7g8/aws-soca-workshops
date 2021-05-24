@@ -1,0 +1,24 @@
+#!/bin/bash
+# --------------------------------------------------------------------------- #
+#   ==   ===  ==                                                              #
+#  ||   ||=  || ))  support s. r. o. 2014, www.cfdsupport.com                 #
+#   ==        ==                                                              #
+# --------------------------------------------------------------------------- #
+
+# This script will duplicate template directory A320-mesh.org to A320-mesh
+# and create a computational mesh inside the new directory.
+
+# check OpenFOAM environment
+if [[ $(echo $WM_PROJECT_VERSION | cut -c1-3) != "dev" ]] && [[ $(echo $WM_PROJECT_VERSION | cut -c1-3) != "7" ]]
+then
+    echo "Use OpenFOAM 7 or OpenFOAM dev with this example script, please."
+    exit
+fi
+
+# create new A320-mesh directory from template directory (does not overwrite existing files)
+cp -rnT A320-mesh.org A320-mesh
+
+# mesh creation
+cd A320-mesh
+time ./makeMesh
+cd ../

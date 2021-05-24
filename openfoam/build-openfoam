@@ -1,0 +1,147 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Build OpenFOAM from source
+#
+
+set -o pipefail
+
+BUILD_NVIDIA_INDEX=0
+
+SOURCE_DIR="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE_DIR" )" >/dev/null 2>&1 && pwd )"
+  SOURCE_DIR="$(readlink "$SOURCE_DIR")"
+  [[ $SOURCE_DIR != /* ]] && SOURCE_DIR="$SCRIPT_DIR/$SOURCE_DIR"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE_SIR" )" >/dev/null 2>&1 && pwd )"
+
+TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+OPENFOAM_SRC_URL=https://codeload.github.com/OpenFOAM/OpenFOAM-7/tar.gz/20200120
+THIRDPARTY_SRC_URL=https://codeload.github.com/OpenFOAM/ThirdParty-7/tar.gz/version-7
+if [ -z "$SCRATCH_DIR" ] ; then
+SCRATCH_DIR="${SCRIPT_DIR}/tmp"
+fi
+INTEL_MPI_DIR=/opt/intel/impi/2019.7.217
+INTEL_MPI_TYPE=release
+. "${INTEL_MPI_DIR}/intel64/bin/mpivars.sh" "${INTEL_MPI_TYPE}" || exit 1
+MPI_ROOT="${I_MPI_ROOT}"
+OPENFOAM_CFLAGS=
+
+
+echo "Build OpenFOAM begun at $(date)"
+
+echo "NO_PARAVIEW=${NO_PARAVIEW}"
+echo "OPENFOAM_CFLAGS=${OPENFOAM_CFLAGS}"
+
+export MPI_ROOT
+
+if [ -z "${WORKING_DIR}" ] ; then
+    WORKING_DIR="${SCRATCH_DIR}/build-openfoam-${TIMESTAMP}"
+    echo "WORKING_DIR=${WORKING_DIR}"
+
+    mkdir -p "${WORKING_DIR}" || exit 1
+    cd "${WORKING_DIR}" || exit 1
+    curl -OJ "${OPENFOAM_SRC_URL}" || exit 1
+    curl -OJ "${THIRDPARTY_SRC_URL}" || exit 1
+else
+    echo "WORKING_DIR=${WORKING_DIR}"
+    echo "Use existing WORKING_DIR"
+    cd "${WORKING_DIR}" || exit 1
+fi
+
+OPENFOAM_SRC_TARBALL="$(ls OpenFOAM*.tar.gz)"
+if [ -z "${OPENFOAM_SRC_TARBALL}" ] ; then
+    echo "No OpenFOAM tarball in $(pwd)" 1>&2
+    exit 1
+fi
+echo "OPENFOAM_SRC_TARBALL=${OPENFOAM_SRC_TARBALL}"
+
+THIRDPARTY_SRC_TARBALL="$(ls ThirdParty*.tar.gz)"
+if [ -z "${THIRDPARTY_SRC_TARBALL}" ] ; then
+    echo "No ThirdParty tarball in $(pwd)" 1>&2
+    exit 1
+fi
+echo "THIRDPARTY_SRC_TARBALL=${THIRDPARTY_SRC_TARBALL}"
+
+tar xf "${OPENFOAM_SRC_TARBALL}" || exit 1
+tar xf "${THIRDPARTY_SRC_TARBALL}" || exit 1
+
+OPENFOAM_SRC_DIR="$(find . -maxdepth 1 -type d -name 'OpenFOAM*' | xargs basename)"
+if [ -z "${OPENFOAM_SRC_DIR}" ] ; then
+    echo "No OpenFOAM src directory in $(pwd)" 1>&2
+    exit 1
+fi
+echo "OPENFOAM_SRC_DIR=${OPENFOAM_SRC_DIR}"
+mv "$OPENFOAM_SRC_DIR" "OpenFOAM-7" || exit 1
+OPENFOAM_SRC_DIR="OpenFOAM-7"
+
+THIRDPARTY_SRC_DIR="$(find . -maxdepth 1 -type d -name 'ThirdParty*' | xargs basename)"
+if [ -z "${THIRDPARTY_SRC_DIR}" ] ; then
+    echo "No ThirdParty src directory in $(pwd)" 1>&2
+    exit 1
+fi
+echo "THIRDPARTY_SRC_DIR=${THIRDPARTY_SRC_DIR}"
+mv "$THIRDPARTY_SRC_DIR" "ThirdParty-7" || exit 1
+THIRDPARTY_SRC_DIR="ThirdParty-7"
+
+cd "${OPENFOAM_SRC_DIR}"  || exit 1
+
+sed -i -e 's/^\(export WM_MPLIB=\).*/\1INTELMPI/' etc/bashrc || exit 1
+source ./etc/bashrc || exit 1
+
+export WM_NCOMPPROCS="$(($(nproc) * 3 / 2))"
+echo "WM_NCOMPPROCS=$WM_NCOMPPROCS"
+sed -i -e 's/include64/intel64\/include/' \
+	-e "s/lib64/intel64\/lib -L\$(MPI_ARCH_PATH)\/intel64\/lib\/${INTEL_MPI_TYPE}/" \
+	wmake/rules/General/mplibINTELMPI64 || exit 1
+sed -i 's/boost_version=boost-system/boost_version=boost_1_64_0/' etc/config.sh/CGAL || exit 1
+if [ ! -z "$OPENFOAM_CFLAGS" ] ; then
+    sed -i -e "s/fPIC/fPIC ${OPENFOAM_CFLAGS}/" wmake/rules/linux64Gcc/c || exit 1
+    sed -i -e "s/fPIC/fPIC ${OPENFOAM_CFLAGS}/" wmake/rules/linux64Gcc/c++ || exit 1
+fi
+
+cd $WM_THIRD_PARTY_DIR || exit 1
+
+if [ "z${NO_PARAVIEW}" != "z1" ] ; then
+    MAKE_PARAVIEW_PARAMS=
+    if [ $BUILD_NVIDIA_INDEX -eq 1 ] ; then
+	POLFILE=patch-paraview-build
+	cat << EOM > $POLFILE
+#!/bin/bash
+sed -i 's/\(cmake_minimum_required.*\)/\1\ncmake_policy(SET CMP0072 NEW)/' ParaView*/CMakeLists.txt
+EOM
+	chmod a+x $POLFILE
+	sed -i "s/^\(downloadParaView.*\)/\1\n.\/$POLFILE/" makeParaView || exit 1
+	MAKE_PARAVIEW_PARAMS="PARAVIEW_BUILD_PLUGIN_pvNVIDIAIndeX=ON"
+    fi
+    ./makeParaView $MAKE_PARAVIEW_PARAMS \
+         -qmake /usr/bin/qmake-qt5 -cmake $(which cmake3) -mpi -python || exit 1
+fi
+
+cd $WM_PROJECT_DIR || exit 1
+#foamSystemCheck || exit 1
+#foam || exit 1
+# build fails PV_PLUGIN_PATH not set. Running the build again works... Might be a parallel build problem.
+for TRY in $(seq 1 3) ; do
+	echo "Try to build TRY=$TRY"
+	. etc/bashrc || exit 1
+	export WM_NCOMPPROCS="$(($(nproc) * 3 / 2))"
+	./Allwmake
+	ST=$?
+	if [ $ST -ne 0 ] ; then
+		echo "Build failed, trying again"
+		sleep 2
+	else
+		break
+	fi
+done
+if [ $ST -ne 0 ] ; then
+	echo "BUILD FAILED" 1>&2
+	exit 1
+fi
+
+echo "BUILD_IN=$(dirname $PWD)"
+echo "Build complete at $(date)"
+

@@ -1,0 +1,80 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.x                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+|*---------------------------------------------------------------------------*|
+|  File created by CFD support s.r.o., Tue Sep 30 13:27:47 2014               |
+|                    http://www.cdfsupport.com                                |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.3;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     pisoFoam;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         0.3000;
+
+deltaT          2e-5;
+
+writeControl    runTime;
+
+writeInterval   0.003;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression compressed;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+adjustTimeStep  yes;
+
+maxCo           0.9;
+
+functions
+{
+  probes
+  {
+      functionObjectLibs ( "libsampling.so" );
+
+      type probes;
+
+      name probes;
+
+      fields
+      (
+        U
+        p
+      );
+
+      probeLocations
+      (
+        (-0.1 2.50 0 ) // pred cumakem
+        (17 1.13 5.7 ) // za motorem
+        (18.96 2.38 3.54) // za kridlem
+        (42 3.4 0) // za letadlem
+      );
+   }
+}
+// ************************************************************************* //

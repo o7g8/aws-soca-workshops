@@ -1,0 +1,204 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, inc.
+#
+# Execute openfoam using the specified parameters from SOCA Submit Job (web).
+#
+#PBS -q %queue_name%
+#PBS -N %job_name%
+#PBS -P aws-soca-workshops
+#PBS -j oe
+# Note: job_output_path variable requires patched soca
+#PBS -o %job_output_path%/logs/
+# https://awslabs.github.io/scale-out-computing-on-aws/tutorials/integration-ec2-job-parameters/
+#PBS -l instance_type=%instance_type%
+#PBS -l walltime=%wall_time%
+#PBS -l force_ri=%force_ri%
+#PBS -l instance_ami=%ami_id%
+#PBS %scratch_opts%
+#PBS -l efa_support=%efa_support%
+%additional_pbs_opts%
+
+. /etc/environment
+
+# The patch is not required if the PBS directive for "-o %job_output_path%/logs/" is removed.
+# JOB_OUTPUT_PATH will also need to be modified.
+if echo "$JOB_OUTPUT_PATH" | grep -q ^% ; then
+    echo "job_output_path not defined, soca patch required" 1>&2
+    exit 1
+fi
+
+AWSCLI_HOME=/apps/aws-workshops/awscli
+JOB_OUTPUT_PATH='%job_output_path%'
+INPUT_FILE="$(realpath %input_file%)"
+JOB_DIR="$JOB_OUTPUT_PATH/$PBS_JOBID"
+LOG_DIR="$JOB_DIR"
+SEL_COPY_OUT='%copy_out%'
+SEL_COPY_BACK='%copy_back%'
+SCRATCH_DIR="%custom_scratch_path%"
+SUBDOMAINS='%cpus%'
+ARCHIVE_SCRATCH='%archive_scratch%'
+PRESERVE_PROCESSOR_DIRS='%preserve_processor_dirs%'
+FSX_EXPORT_PATHS="%fsx_export_paths%"
+IMPI_HOME='%impi_location%'
+OPENFOAM_HOME='%openfoam_location%'
+SEL_SCRIPT_PATH='%script_path%'
+SEL_SCRIPT_PARAMS='%script_parameters%'
+EFA_SUPPORT='%efa_support%'
+START_TIME="$(date +%s)"
+
+export SUBDOMAINS
+
+SCRIPT_PATH=
+SCRIPT_PARAMS=
+
+mkdir -p "$JOB_OUTPUT_PATH/logs"
+
+echo "Begin at $(date)"
+echo "PBS_JOBID=$PBS_JOBID"
+
+mkdir -p "$JOB_DIR" || exit 1
+mkdir -p "$LOG_DIR" || exit 1
+export LOG_DIR
+
+COPY_BACK=0
+if [ -z "$SCRATCH_DIR" ] ; then
+    SCRATCH_DIR="$JOB_DIR"
+    for DIR in /fsx /scratch ; do
+	if mountpoint -q $DIR; then
+	    SCRATCH_DIR="$DIR/$PBS_JOBID"
+	    COPY_BACK="$SEL_COPY_BACK"
+	    break
+	fi
+    done
+else
+    COPY_BACK="$SEL_COPY_BACK"
+fi
+
+if [ "$SCRATCH_DIR" = "$JOB_DIR" ] ; then
+    COPY_BACK=0
+fi
+
+mkdir -p "$SCRATCH_DIR" || exit 1
+pushd "$SCRATCH_DIR" || exit 1
+
+. "$IMPI_HOME/bin/mpivars.sh" || exit 1
+export MPI_ROOT="$I_MPI_ROOT"
+export I_MPI_DEBUG=5
+. "$OPENFOAM_HOME/etc/bashrc" || exit 1
+if [ "$EFA_SUPPORT" = "True" ] ; then
+    export LD_LIBRARY_PATH="/opt/amazon/efa/lib64:$LD_LIBRARY_PATH"
+    export FI_PROVIDER_PATH="/opt/amazon/efa/lib64/libfabric"
+    export I_MPI_FABRICS=shm:ofi
+fi
+
+echo "INPUT_FILE=$INPUT_FILE"
+echo "MPI_ROOT=$MPI_ROOT"
+echo "EFA_SUPPORT=$EFA_SUPPORT"
+echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+echo "FI_PROVIDER_PATH=$FD_PROVIDER_PATH"
+echo "WM_PROJECT_DIR=$WM_PROJECT_DIR"
+echo "SCRATCH_DIR=$SCRATCH_DIR"
+echo "SUBDOMAINS=$SUBDOMAINS"
+echo "ARCHIVE_SCRATCH=$ARCHIVE_SCRATCH"
+echo "PRESERVE_PROCESSOR_DIRS=$PRESERVE_PROCESSOR_DIRS"
+
+INPUT_SCRIPT=
+case "$INPUT_FILE" in
+    *.zip)
+	if [ "$SEL_COPY_OUT" = "1" ] ; then
+	    echo "Unzip $INPUT_FILE"
+	    time unzip "$INPUT_FILE" || exit 1
+	else
+	    echo "Copy out not selected, not unzipping $INPUT_FILE"
+	fi
+	;;
+    *.conf)
+	INPUT_DIR="$(dirname $INPUT_FILE)"
+	if [ "$SEL_COPY_OUT" = "1" ] ; then
+	    echo "Copy $(dirname $INPUT_DIR)"
+	    cp -a "$INPUT_DIR" "$(basename $INPUT_DIR)" || exit 1
+	else
+	    echo "Copy out not selected, not copying $INPUT_DIR"
+	fi
+	INPUT_SCRIPT="$INPUT_FILE"
+	;;
+    *)
+	echo "Unsupported input file type: $INPUT_FILE" 1>&2
+	exit 1
+	;;
+esac
+
+if [ ! -z "$INPUT_SCRIPT" ] ; then
+    echo "Source $INPUT_SCRIPT"
+    . "$INPUT_SCRIPT" || exit 1
+fi
+
+if [ ! -z "$SEL_SCRIPT_PATH" ] ; then
+    # use specified script and params if specified by job
+    SCRIPT_PATH="$SEL_SCRIPT_PATH"
+    SCRIPT_PARAMS="$SEL_SCRIPT_PARAMS"
+elif [ ! -z "$SEL_SCRIPT_PARAMS" ] ; then
+    # use specified  params if specified by job
+    SCRIPT_PARAMS="$SEL_SCRIPT_PARAMS"
+fi
+
+SCRIPT_DIR="$(dirname $SCRIPT_PATH)"
+SCRIPT="$(basename $SCRIPT_PATH)"
+
+echo "SCRIPT_PATH=$SCRIPT_PATH"
+echo "SCRIPT_DIR=$SCRIPT_DIR"
+echo "SCRIPT=$SCRIPT"
+echo "SCRIPT_PARAMS=$SCRIPT_PARAMS"
+
+if [ -z "SCRIPT_PATH" ] ; then
+    echo "ERROR: SCRIPT_PATH is empty" 1>&2
+    exit 1
+fi
+
+pushd "$SCRIPT_DIR" || exit 1
+echo "Execute $SCRIPT $SCRIPT_PARAMS"
+time "./$SCRIPT" $SCRIPT_PARAMS
+RC=$?
+popd
+if [ "z$PRESERVE_PROCESSOR_DIRS" = "z0" ] ; then
+    find "$SCRIPT_DIR" -type d -name 'processor*' -prune \
+	 -exec rm -rf {} \; || true
+fi
+if [ "$SEL_COPY_BACK" = "0" ] ; then
+    touch "$JOB_DIR/COPY_BACK_NOT_SELECTED"
+fi
+if [ $COPY_BACK -eq 1 ] ; then
+    echo "Copy $(pwd) to $JOB_DIR"
+    time cp -a . "$JOB_DIR" || exit 1
+else
+    echo "Not copying $(pwd) to $JOB_DIR"
+fi
+if [  ! -z "$FSX_EXPORT_PATHS" ] ; then
+    if ! mountpoint -q /fsx ; then
+	echo "WARNING: FSx export requested, but /fsx isn't mounted" 1>&2
+    else
+	# XXX Workaround for old version of awscli installed by soca
+	. "$AWSCLI_HOME/bin/activate"
+	FSX_ID="$(grep /fsx /etc/fstab | cut -f1 -d.)"
+	if [ -z "$FSX_ID" ] ; then
+	    echo "WARNING: Could not determine ID of /fsx"
+	else
+	    echo "Export $FSX_EXPORT_PATHS from /fsx"
+	    aws --region $AWS_DEFAULT_REGION fsx create-data-repository-task --file-system-id "$FSX_ID"  \
+		--type EXPORT_TO_REPOSITORY --paths "$FSX_EXPORT_PATHS" --report Enabled=false
+	fi
+    fi
+fi
+
+if [ "z$ARCHIVE_SCRATCH" = "z1" ] ; then
+    ARCHIVE_PATH="$JOB_OUTPUT_PATH/archive"
+    mkdir -p "$ARCHIVE_PATH"
+    echo "zip $(pwd) to $ARCHIVE_PATH/${PBS_JOBID}.zip"
+    time zip -r "$ARCHIVE_PATH/${PBS_JOBID}.zip" . || exit 1
+fi
+echo "Done, RC=$RC at $(date)"
+END_TIME="$(date +%s)"
+echo "Elapsed=$(expr $END_TIME - $START_TIME)"
+exit $RC
+

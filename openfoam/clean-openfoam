@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Cleanup OpenFOAM build to remove build cruft.
+#
+
+BUILD_DIR="$1"
+if [ -z "$BUILD_DIR" ] ; then
+    echo "Usage: $0 BUILD_DIR" 1>&2
+    exit 1
+fi
+
+BUILD_DIR="$(realpath $BUILD_DIR)"
+pushd "$BUILD_DIR" || exit 1
+BUILD_RM_DIR="${BUILD_DIR}-removed"
+mkdir -p "$BUILD_RM_DIR" || exit 1
+echo "Moving build artifacts from $BUILD_DIR to $BUILD_RM_DIR"
+for src in *.gz \
+	       ThirdParty-7/build \
+	       OpenFOAM-7/platforms/linux64GccDPInt32Opt/src/ ; do
+    echo "Move $src"
+    mkdir -p "$BUILD_RM_DIR/$(dirname $src)" || exit 1
+    mv $src "$BUILD_RM_DIR/$src" || exit 1
+done
+	   

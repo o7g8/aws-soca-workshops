@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Install shared software to /apps/aws-workshops.
+#
+
+AWSWORKSHOPS_APPS=/apps/aws-workshops
+AWSCLI_VIRTUALENV="$AWSWORKSHOPS_APPS/awscli"
+OPENFOAM="$AWSWORKSHOPS_APPS/openfoam"
+UNINSTALL=0
+
+cd ${0%/*} || exit 1    # Run from this directory
+SCRIPT_DIR="$PWD"
+
+if ! pidof pbs_server.bin >> /dev/null ; then
+    echo "ERROR: No PID for pbs_server.bin." 1>&2
+    echo "This script must be executed on the scheduler node." 1>&2
+    exit 1
+fi
+
+if [ "$USER" != "root" ] ; then
+    echo "ERROR: $0 must be executed as root" 1>&2
+    exit 1
+fi
+
+if [ "$1" = "-u" ] ; then
+    UNINSTALL=1
+fi
+
+
+if [ "$UNINSTALL" -eq 1 ] ; then
+    echo "Uninstall awscli from $AWSCLI_VIRTUALENV"
+    rm -rf "$AWSCLI_VIRTUALENV" || exit 1
+    echo "Uninstall openfoam models from $OPENFOAM/models"
+    rm -rf "$OPENFOAM/models" || exit 1
+    echo "Uninstall complete"
+else 
+
+    # A newer version of awscli is required for create-data-repository-task support
+    echo "Install awscli to $AWSCLI_VIRTUALENV"
+    virtualenv -p "$(which python3)" "$AWSCLI_VIRTUALENV" || exit 1
+    . "$AWSCLI_VIRTUALENV/bin/activate" || exit 1
+    pip3 install awscli || exit 1
+    deactivate
+
+    echo "Install openfoam models to $OPENFOAM/models"
+    mkdir -p "$OPENFOAM" || exit 1
+    cp -r "$SCRIPT_DIR/openfoam/models" "$OPENFOAM" || exit 1
+
+    echo "Install complete"
+fi

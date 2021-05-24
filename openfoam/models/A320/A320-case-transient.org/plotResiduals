@@ -1,0 +1,12 @@
+set title "Convergence process"
+set xlabel "Iterations"
+set ylabel "Residuals"
+set logscale y;
+plot "< cat log.all | grep 'Ux' | cut -d' ' -f9 | tr -d ','"  title 'Ux' w lines,\
+     "< cat log.all | grep Uy | cut -d' ' -f9 | tr -d ','"  title 'Uy' w lines,\
+     "< cat log.all | grep Uz | cut -d' ' -f9 | tr -d ','"  title 'Uz' w lines,\
+     "< cat log.all | grep ' p,' | cut -d' ' -f9 | tr -d ','"  title 'p' w lines,\
+     "< cat log.all | grep ' k,' | cut -d' ' -f9 | tr -d ','"  title 'k' w lines,\
+     "< cat log.all | grep ' omega,' | cut -d' ' -f9 | tr -d ','"  title 'omega' w lines
+pause mouse
+reread

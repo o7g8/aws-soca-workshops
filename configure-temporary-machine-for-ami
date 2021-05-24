@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Install IMPI, OpenFOAM, ParaView and FreeCAD to a temporary machine instance,
+# which will be used to create an AMI.
+#
+#
+# This is the only script that is executed on the temporary instance.
+#
+
+AWSWORKSHOPS_APPS=/opt/aws-workshops
+FREECAD_HOME="$AWSWORKSHOPS_APPS/freecad"
+OPENFOAM_HOME="$AWSWORKSHOPS_APPS/openfoam/impi"
+NVIDIA_INDEX_HOME="$AWSWORKSHOPS_APPS/nvidia"
+FREECAD_APPIMAGE=FreeCAD_0.18-16146-Linux-Conda_Py3Qt5_glibc2.12-x86_64.AppImage
+FREECAD_URL=https://github.com/FreeCAD/FreeCAD/releases/download/0.18.4/$FREECAD_APPIMAGE
+OPENFOAM_TAR=build-openfoam-20200701-050825.tgz
+OPENFOAM_URL=s3://sfw-soca-aws-workshops-openfoam-us-west-2/openfoam/linux64/impi/$OPENFOAM_TAR
+NVIDIA_INDEX_TAR=nvidia-index-libs-2.4.20200424-linux.tar.bz2
+NVIDIA_INDEX_URL=https://www.paraview.org/files/dependencies/$NVIDIA_INDEX_TAR
+IMPI_TAR="$1"
+
+cd ${0%/*} || exit 1    # Run from this directory
+SCRIPT_DIR="$PWD"
+
+if pidof pbs_server.bin >> /dev/null ; then
+    echo "ERROR: found PID for pbs_server.bin. Is this a scheduler node?" 1>&2
+    echo "This script must executed on a temporary machine instance" 1>&2
+    exit 1
+fi
+
+if [ -z "$IMPI_TAR" -o "$2" != "--accept-impi-eula" ] ; then
+    echo "Usage: $0 PATH_TO_IMPI_TAR --accept-impi-eula" 1>&2
+    exit 1
+fi
+
+if [ "$USER" != "root" ] ; then
+    echo "ERROR: $0 must be executed as root" 1>&2
+    exit 1
+fi
+
+
+IMPI_TAR="$(realpath $IMPI_TAR)" || exit 1
+
+TEMPDIR=$(mktemp -d $PWD/installer.XXXX) || exit 1
+pushd $TEMPDIR || exit 1
+
+PACKAGES="pigz eog totem libglvnd-opengl qt5-qttools-libs-help qt5-qtx11extras fuse gedit emacs chromium icedtea-web"
+echo "Install $PACKAGES"
+amazon-linux-extras install -y epel || exit 1
+yum install -y $PACKAGES || exit 1
+
+echo "Install lustre client 2.10"
+amazon-linux-extras install -y lustre2.10 || exit 1
+
+echo "Install IMPI $IMPI_TAR"
+tar xpf "$IMPI_TAR" || exit 1
+pushd l_mpi_* || exit 1
+./install.sh --cli-mode --install_dir /opt/intel -s --accept_eula --cli-mode || exit 1
+
+echo "Install FreeCAD to $FREECAD_HOME"
+mkdir -p "$FREECAD_HOME" || exit 1
+curl -OJL "$FREECAD_URL" || exit 1
+chmod a+x "$FREECAD_APPIMAGE" || exit 1
+mv "$FREECAD_APPIMAGE" "$FREECAD_HOME" || exit 1
+ln -s "$FREECAD_APPIMAGE" "$FREECAD_HOME/freecad"  || exit 1
+
+echo "Install OpenFOAM to $OPENFOAM_HOME"
+mkdir -p "$OPENFOAM_HOME" || exit 1
+if [ -f "$SCRIPT_DIR/$OPENFOAM_TAR" ] ; then
+    OPENFOAM_TAR="$SCRIPT_DIR/$OPENFOAM_TAR"
+else
+    aws $AWSCLI_ARGS s3 cp "$OPENFOAM_URL" . || exit 1
+fi
+pigz -dc  $OPENFOAM_TAR | tar xpf - -C "$OPENFOAM_HOME" || exit 1
+ln -s "$(ls -t $OPENFOAM_HOME | head -n1)" "$OPENFOAM_HOME/latest"  || exit 1
+
+if [ "$INSTALL_NVIDIA_INDEX" = "1" ] ; then
+echo "Install NVIDIA Index to $NVIDIA_INDEX_HOME"
+mkdir -p "$NVIDIA_INDEX_HOME" || exit 1
+curl -OJL "$NVIDIA_INDEX_URL" || exit 1
+tar xf "$NVIDIA_INDEX_TAR" -C "$NVIDIA_INDEX_HOME" || exit 1
+ln -s "($ls -t $NVIDIA_INDEX_HOME | head -n1)" "$NVIDIA_INDEX_HOME/nvidia-index-libs-latest" || exit 1
+fi
+
+PARAFOAM_WRAPPER="$AWSWORKSHOPS_APPS/bin/runParaFoam"
+mkdir -p "$(dirname $PARAFOAM_WRAPPER)" || exit 1
+cat <<EOM > "$PARAFOAM_WRAPPER"
+#!/bin/bash
+PFARGS=
+while [ \$# -gt 0 ] ; do
+    PFARGS="\$PFARGS \$1"
+    shift
+done
+. /opt/intel/impi/2019.7.217/intel64/bin/mpivars.sh || exit 1
+export MPI_ROOT=\$I_MPI_ROOT
+NVIDIA_INDEX_LIBS=/opt/aws-workshops/nvidia/nvidia-index-libs-latest/lib
+. /opt/aws-workshops/openfoam/impi/latest/OpenFOAM-7/etc/bashrc || exit 1
+if [ -d "\$NVIDIA_INDEX_LIBS" ] ; then
+    export LD_LIBRARY_PATH="\$NVIDIA_INDEX_LIBS:\$LD_LIBRARY_PATH"
+fi
+exec paraFoam \$PFARGS
+EOM
+chmod a+x "$PARAFOAM_WRAPPER"
+
+rm -rf /var/cache/yum
+
+echo "Installation on $(hostname) complete."
+echo "Make any final configuration changes and create an AMI"
+

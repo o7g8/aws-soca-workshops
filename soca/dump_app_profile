@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# Copyright (c)2020 System Fabric Works, Inc.
+#
+# Dump application profile by name to a csv file
+#
+
+APP_NAME="$1"
+cd /apps/soca/$SOCA_CONFIGURATION/cluster_web_ui || exit 1
+exec sqlite3 --csv db.sqlite 'select * from application_profiles where profile_name="'"${APP_NAME}"'"'

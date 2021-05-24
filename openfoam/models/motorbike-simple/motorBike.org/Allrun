@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# OpenFOAM motorBike tutorial modified for use with SOCA
+#
+
+set -o pipefail
+
+cd ${0%/*} || exit 1    # Run from this directory
+
+DO_MESH=1
+DO_SOLVE=1
+SUBDOMAINS="$(nproc)"
+
+while getopts "s:n:" OPTION; do
+      case "$OPTION" in
+	  n)
+	      SUBDOMAINS="$OPTARG"
+	      ;;
+	  s)
+	      case "$OPTARG" in
+		  all)
+		      true
+		      ;;
+		  mesh)
+		      DO_SOLVE=0
+		      ;;
+		  solve)
+		      DO_MESH=0
+		      ;;
+		  *)
+		      echo "Invalid step $OPTARG" 1>&2
+		      exit 1
+		      ;;
+	      esac
+	      ;;
+	  *)
+	      echo "Invalid option" 1>&2
+	      exit 1
+	      ;;
+      esac
+done
+      
+sed -i "s/\(.*numberOfSubdomains[ \t]*\)[0-9].*;/numberOfSubdomains $SUBDOMAINS;/g" system/decomposeParDict || exit 1
+
+# Source tutorial run functions
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+if [ $DO_MESH -eq 1 ] ; then
+    # Copy motorbike surface from resources directory
+    cp $FOAM_TUTORIALS/resources/geometry/motorBike.obj.gz constant/triSurface/ || exit 1
+    runApplication surfaceFeatures || exit 1
+
+    runApplication blockMesh || exit 1
+
+    runApplication decomposePar -copyZero || exit 1
+    runParallel snappyHexMesh -overwrite || exit 1
+    runApplication reconstructParMesh -constant || exit 1
+    runApplication checkMesh -constant
+fi
+
+if [ $DO_SOLVE -eq 1 ] ; then
+
+    if [ $DO_MESH -eq 0 ] ; then
+	runApplication decomposePar -copyZero || exit 1
+    fi
+    runParallel patchSummary || exit 1
+    runParallel potentialFoam || exit 1
+    runParallel $(getApplication) || exit 1
+    runApplication reconstructPar -latestTime || exit 1
+fi
+
+#------------------------------------------------------------------------------

@@ -1,0 +1,56 @@
+#!/bin/bash
+# --------------------------------------------------------------------------- #
+#   ==   ===  ==                                                              #
+#  ||   ||=  || ))  support s. r. o. 2014, www.cfdsupport.com                 #
+#   ==        ==                                                              #
+# --------------------------------------------------------------------------- #
+
+if [ ! -z "$SUBDOMAINS" ] ; then
+    NProc="$SUBDOMAINS"
+else
+    NProc="$(nproc)"
+fi
+
+if [ -z "$LOG_DIR" ] ; then
+    LOG_DIR="$(pwd)"
+fi
+
+sed -i "s/\(.*numberOfSubdomains[ \t]*\)[0-9].*;/numberOfSubdomains $NProc;/g" system/decomposeParDict
+
+# check OpenFOAM environment
+if [[ $(echo $WM_PROJECT_VERSION | cut -c1-3) != "dev" ]] && [[ $(echo $WM_PROJECT_VERSION | cut -c1-3) != "7" ]]
+then
+    echo "Use OpenFOAM 7 or OpenFOAM dev with this example script, please."
+    exit
+fi
+
+# copy mesh and initial conditions
+echo " 1. Initialize the case."
+rm -rf 0 "$LOG_DIR/log.all" constant/polyMesh processor* *.log
+cp -rf 0.org 0
+if [[ ! -f ../A320-mesh/last/polyMesh/boundary ]]
+then
+    echo "Mesh not found in A320-mesh/last."
+    exit
+fi
+cp -rf ../A320-mesh/last/polyMesh constant/polyMesh
+
+# map fields from the stationary case
+echo " 2. Using steady-state fields as initial."
+latestTime=$(ls ../A320-case-stationary | grep '^[0-9]*$' | sort -n | tail -1)
+cp ../A320-case-stationary/$latestTime/k 0/
+cp ../A320-case-stationary/$latestTime/p 0/
+cp ../A320-case-stationary/$latestTime/U 0/
+cp ../A320-case-stationary/$latestTime/phi 0/
+
+# decompose and compute
+echo " 3. Parallel decomposition."
+decomposePar -force | tee -a "$LOG_DIR/log.all" > decomposePar.log
+echo " 4. Mesh optimization (renumberMesh)."
+mpiexec -np $NProc renumberMesh -parallel -overwrite | tee -a "$LOG_DIR/log.all" > renumberMesh.log
+echo " 5. Unsteady simulation (pisoFoam, ${NProc} CPUs)."
+mpiexec -np $NProc pisoFoam -parallel | tee -a "$LOG_DIR/log.all" > pisoFoam.log
+
+# print info on visualization
+echo "Computation finished."
+echo "Use \"paraFoam -builtin\" for visualization of decomposed case."

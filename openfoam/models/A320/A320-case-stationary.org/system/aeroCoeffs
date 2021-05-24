@@ -1,0 +1,32 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.2.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+forces
+{
+    type        forceCoeffs;
+    functionObjectLibs ( "libforces.so" );
+    writeControl timeStep;
+    outputInterval 1;          // output interval
+
+    patches     ( "car.*" );   // surfaces from which to compute Cd and Cl
+    pName       p;
+    UName       U;
+    rhoName     rhoInf;        // reference density (incompressible case)
+    log         true;          // make log file with output? 
+    rhoInf      1;             // reference density value
+    liftDir     (0 1 0);       // direction of lift
+    dragDir     (1 0 0);       // direction of drag
+    CofR        (-13.4 0 0);   // moment of force reference centre
+    pitchAxis   (0 0 1);       // rotation axis vector (moment computation)
+    magUInf     233;            // mean flow velocity  
+    lRef        37.7;           // reference lengt (moment computation)
+    Aref        2.24;          // reference area (lift and drag computation)
+}
+
+
+// ************************************************************************* //
