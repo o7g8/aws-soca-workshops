@@ -60,7 +60,7 @@ Console.
 
 1. Download Intel(r) MPI for Linux from https://software.seek.intel.com/performance-libraries .
     1. Click on "Component Binary Packages -- M".
-    2. Clock on "Intel MPI Library for Linux Version 2021.2.0 156 MB" to download the distribution `l_mpi_oneapi_p_2021.2.0.215_offline.sh`.
+    2. Click on "Intel MPI Library for Linux Version 2021.2.0 156 MB" to download the distribution `l_mpi_oneapi_p_2021.2.0.215_offline.sh`.
     3. Newer versions may work with the software packages used in this
        workshop. However, the testing was performed with 2021.2.0.215. Also,
        using a newer version will require changing the paths for Intel MPI
@@ -73,10 +73,11 @@ Console.
     4. Steps in section 3 are optional.
     5. Stop before proceeding to section 4.
     6. Copy the machine instance's public IP address to a document for reference. This is the address that will be used for copying files to and logging into the machine.
-3. Copy configure-temporary-machine-for-ami and `l_mpi_2019.7.217.tgz` to the temporary machine instance. Note that
+3. Download Intel MPI on the temporary machine `wget https://registrationcenter-download.intel.com/akdlm/irc_nas/17729/l_mpi_oneapi_p_2021.2.0.215_offline.sh`
+3. Copy `configure-temporary-machine-for-ami` and `l_mpi_oneapi_p_2021.2.0.215_offline.sh` to the temporary machine instance. Note that
    the machine is configured to use the ssh key specified during the launch instance process and the
    user name is ec2-user.
-4. `$ sudo ./configure-temporary-machine-for-ami l_mpi_2019.7.217.tgz --accept-impi-eula`
+4. `$ sudo ./configure-temporary-machine-for-ami l_mpi_oneapi_p_2021.2.0.215_offline.sh --accept-eula`
 5. Clean up the ec2-user's home directory. e.g. `$ cd ~ec2-user && sudo rm -rf l_mpi* build* install.*`
 6. Continue with step 4 of the AMI creation instructions.
 7. Copy the AMI ID to a document for later reference. This will be the AMI ID

@@ -19,7 +19,7 @@ OPENFOAM_TAR=build-openfoam-20200701-050825.tgz
 OPENFOAM_URL=s3://sfw-soca-aws-workshops-openfoam-us-west-2/openfoam/linux64/impi/$OPENFOAM_TAR
 NVIDIA_INDEX_TAR=nvidia-index-libs-2.4.20200424-linux.tar.bz2
 NVIDIA_INDEX_URL=https://www.paraview.org/files/dependencies/$NVIDIA_INDEX_TAR
-IMPI_TAR="$1"
+IMPI_EXE="$1"
 
 cd ${0%/*} || exit 1    # Run from this directory
 SCRIPT_DIR="$PWD"
@@ -30,8 +30,8 @@ if pidof pbs_server.bin >> /dev/null ; then
     exit 1
 fi
 
-if [ -z "$IMPI_TAR" -o "$2" != "--accept-impi-eula" ] ; then
-    echo "Usage: $0 PATH_TO_IMPI_TAR --accept-impi-eula" 1>&2
+if [ -z "$IMPI_EXE" -o "$2" != "--accept-eula" ] ; then
+    echo "Usage: $0 PATH_TO_IMPI_EXE --accept-eula" 1>&2
     exit 1
 fi
 
@@ -41,7 +41,7 @@ if [ "$USER" != "root" ] ; then
 fi
 
 
-IMPI_TAR="$(realpath $IMPI_TAR)" || exit 1
+IMPI_EXE="$(realpath $IMPI_EXE)" || exit 1
 
 TEMPDIR=$(mktemp -d $PWD/installer.XXXX) || exit 1
 pushd $TEMPDIR || exit 1
@@ -54,10 +54,8 @@ yum install -y $PACKAGES || exit 1
 echo "Install lustre client 2.10"
 amazon-linux-extras install -y lustre2.10 || exit 1
 
-echo "Install IMPI $IMPI_TAR"
-tar xpf "$IMPI_TAR" || exit 1
-pushd l_mpi_* || exit 1
-./install.sh --cli-mode --install_dir /opt/intel -s --accept_eula --cli-mode || exit 1
+echo "Install IMPI $IMPI_EXE"
+"$IMPI_EXE" -a -s -c --eula accept --install_dir /opt/intel || exit 1
 
 echo "Install FreeCAD to $FREECAD_HOME"
 mkdir -p "$FREECAD_HOME" || exit 1
@@ -93,7 +91,7 @@ while [ \$# -gt 0 ] ; do
     PFARGS="\$PFARGS \$1"
     shift
 done
-. /opt/intel/impi/2019.7.217/intel64/bin/mpivars.sh || exit 1
+. /opt/intel/oneapi/mpi/2021.2.0/etc/conda/activate.d/mpivars.activate.sh || exit 1
 export MPI_ROOT=\$I_MPI_ROOT
 NVIDIA_INDEX_LIBS=/opt/aws-workshops/nvidia/nvidia-index-libs-latest/lib
 . /opt/aws-workshops/openfoam/impi/latest/OpenFOAM-7/etc/bashrc || exit 1
