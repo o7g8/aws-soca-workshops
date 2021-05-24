@@ -32,11 +32,11 @@ Console.
 
 1. `$ git clone https://github.com/awslabs/scale-out-computing-on-aws`
 2. `$ cd scale-out-computing-on-aws`
-3. `$ git checkout 43dcc9ea`
+3. `$ git checkout tags/2.6.1`
 4. `$ python3 ./source/manual_build.py`
 5. Follow the instructions output by the script. 
 6. Click on the soca cluster stack in Stacks. It will be have the same name that you provided for the cluster.
-   The stack's description will be "Scale-Out Computing on AWS. Template version 2.5.0".
+   The stack's description will be "Scale-Out Computing on AWS. Template version 2.6.1".
 7. Click on the Outputs tab for the Stack.
 8. Copy the value for WebUserInterface and paste it in a document for later reference. This is the URL that will be used to access the SOCA User Interface.
 9. Copy the value for SchedulerPublicIP and paste it in a document for later reference. This is the IP address used to acess the scheduler.
@@ -59,10 +59,10 @@ Console.
 # Configure Compute Node AMI
 
 1. Download Intel(r) MPI for Linux from https://software.seek.intel.com/performance-libraries .
-    1. Register and choose "Intel(r) MPI for Linux" version "2019 update 7".
-    2. Click `l_mpi_2019.7.217.tgz` to download the distribution.
+    1. Click on "Component Binary Packages -- M".
+    2. Clock on "Intel MPI Library for Linux Version 2021.2.0 156 MB" to download the distribution `l_mpi_oneapi_p_2021.2.0.215_offline.sh`.
     3. Newer versions may work with the software packages used in this
-       workshop. However, the testing was performed with 2019u7. Also,
+       workshop. However, the testing was performed with 2021.2.0.215. Also,
        using a newer version will require changing the paths for Intel MPI
        in the OpenFOAM application profile form. Older versions are NOT
        recommended.
