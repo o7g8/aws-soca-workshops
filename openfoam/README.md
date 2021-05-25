@@ -20,3 +20,16 @@ Build OpenFOAM:
 sudo ./build-openfoam  &>log 
 ```
 
+Separate build results from the sources and build files:
+
+```bash
+sudo ./clean-openfoam <tmp/build-openfoam-XXXXXXX-XXXXX>
+```
+
+Package the build results:
+
+```bash
+cd tmp
+sudo tar czf <tmp/build-openfoam-XXXXXXX-XXXXX>.tar.gz <tmp/build-openfoam-XXXXXXX-XXXXX>
+```
+
