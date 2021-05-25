@@ -82,7 +82,7 @@ fi
 mkdir -p "$SCRATCH_DIR" || exit 1
 pushd "$SCRATCH_DIR" || exit 1
 
-. "$IMPI_HOME/bin/mpivars.sh" || exit 1
+. "$IMPI_HOME/env/vars.sh" || exit 1
 export MPI_ROOT="$I_MPI_ROOT"
 export I_MPI_DEBUG=5
 . "$OPENFOAM_HOME/etc/bashrc" || exit 1

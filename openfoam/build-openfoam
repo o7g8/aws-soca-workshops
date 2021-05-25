@@ -23,9 +23,9 @@ THIRDPARTY_SRC_URL=https://codeload.github.com/OpenFOAM/ThirdParty-7/tar.gz/vers
 if [ -z "$SCRATCH_DIR" ] ; then
 SCRATCH_DIR="${SCRIPT_DIR}/tmp"
 fi
-INTEL_MPI_DIR=/opt/intel/oneapi/mpi/2021.2.0/etc/conda/activate.d
+INTEL_MPI_DIR=/opt/intel/mpi/2021.2.0/env
 INTEL_MPI_TYPE=release
-. "${INTEL_MPI_DIR}/mpivars.activate.sh" "${INTEL_MPI_TYPE}" || exit 1
+. "${INTEL_MPI_DIR}/vars.sh" "${INTEL_MPI_TYPE}" || exit 1
 MPI_ROOT="${I_MPI_ROOT}"
 OPENFOAM_CFLAGS=
 
