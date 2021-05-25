@@ -1,2 +1,5 @@
+* [DONE] build-openfoam - build the OpenFOAM.
+* configure-temporary-machine-for-ami: make it work with the newly built OpenFOAM.
+
 * configure-temporary-machine-for-ami: Upgrade FreeCAD to https://github.com/FreeCAD/FreeCAD/releases/tag/0.19.2
 * build-openfoam, configure-temporary-machine-for-ami: Upgrade OpenFOAM from https://github.com/OpenFOAM/OpenFOAM-7/tags to https://github.com/OpenFOAM/OpenFOAM-8/releases

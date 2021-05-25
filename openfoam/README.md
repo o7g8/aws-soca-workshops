@@ -30,6 +30,6 @@ Package the build results:
 
 ```bash
 cd tmp
-sudo tar czf <tmp/build-openfoam-XXXXXXX-XXXXX>.tar.gz <tmp/build-openfoam-XXXXXXX-XXXXX>
+sudo tar czf <tmp/build-openfoam-XXXXXXX-XXXXX>.tgz <tmp/build-openfoam-XXXXXXX-XXXXX>
 ```
 
