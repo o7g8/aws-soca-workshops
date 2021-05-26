@@ -60,6 +60,7 @@ pushd "$SOCA_HOME/cluster_web_ui" || exit 1
 # echo "Patch SOCA"
 # pushd "$SOCA_HOME" || exit 2
 
+# TODO: OGG - find out if the patch is still needed.
 # patch -p2 < "$SCRIPT_DIR/soca/patches/job_output_path.patch"
 # if [ $? -ne 0 ] ; then
 #     echo "WARNING: soca_job_output-path.patch failed to apply. job_output_path will not be available in scripts."
