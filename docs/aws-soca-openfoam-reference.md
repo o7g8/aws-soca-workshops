@@ -81,8 +81,8 @@ Console.
 6. Continue with step 4 of the AMI creation instructions.
 7. Copy the AMI ID to a document for later reference. This will be the AMI ID
    used for Desktop Sessions and Job Submissions.
-
-# Install Mesh A320 Geomatry
+8. Register the AMI with SOCA: login to your SOCA web interface and go to "AMI management" under "Admin" section. Fill out the form: specify the AMI ID, operating system (Linux), minimum storage requirement (50Gb) as well as pick a friendly label (e.g. OpenFOAM).
+# Install Mesh A320 Geomatry (not needed, is a part of workshop Git)
 
 1. Register at https://www.cfdsupport.com/download-cases-a321.html and follow
 instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
@@ -95,9 +95,11 @@ instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
 # Launch Visualization Session
 
 1. Visit the SOCA User Interface with a web browser and login.
-2. Click on "Graphical Access"
-3. Choose Session Type "3D - Small".
-4. Click "View Advanced Options" and enter the AMI ID 
+2. Click on "Linux Desktop"
+3. Choose Session Type "3D - Small" (or a smaller session if capacity doesn't allow).
+4. Click "Software Stack" and choose your custom AMI (OpenFOAM).
+5. Adjust the Storage Size to 50Gb or more if needed.
+6. Launch the session.
 
 # Launch FreeCAD
 
