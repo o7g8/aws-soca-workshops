@@ -4,6 +4,7 @@ yum -y install git
 git clone https://github.com/o7g8/aws-soca-workshops
 cd aws-soca-workshops
 git checkout soca-2.6.1
+mv ../build-openfoam-20210525-211824.tar.gz .
 wget https://registrationcenter-download.intel.com/akdlm/irc_nas/17729/l_mpi_oneapi_p_2021.2.0.215_offline.sh
 chmod +x l_mpi_oneapi_p_2021.2.0.215_offline.sh
 ./configure-temporary-machine-for-ami l_mpi_oneapi_p_2021.2.0.215_offline.sh --accept-eula
