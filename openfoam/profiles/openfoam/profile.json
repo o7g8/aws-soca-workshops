@@ -1,0 +1,432 @@
+[
+  {
+    "type": "header",
+    "subtype": "h4",
+    "label": "Job Parameters"
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "What type of instance do you want to use? (instance_type)",
+    "description": "EC2 instance type to provision. This will be used along with cpus to calculate the number of nodes to provision",
+    "className": "form-control",
+    "name": "instance_type",
+    "values": [
+      {
+        "label": "Mesh Small (4 CPUs, 64 GB RAM)",
+        "value": "r5.2xlarge",
+        "selected": true
+      },
+      {
+        "label": "Mesh Medium (8 CPUs, 128 GB RAM)",
+        "value": "r5.4xlarge"
+      },
+      {
+        "label": "Mesh Large (16 CPUs, 256 GB RAM)",
+        "value": "r5.8xlarge"
+      },
+      {
+        "label": "Solve Small (4 CPUs, 16 GB RAM)",
+        "value": "c5.2xlarge"
+      },
+      {
+        "label": "Solve Medium (8 CPUs, 32 GB RAM)",
+        "value": "c5.4xlarge"
+      },
+      {
+        "label": "Solve Large (18 CPUs, 96 GB RAM)",
+        "value": "c5.9xlarge"
+      },
+      {
+        "label": "r5.24xlarge",
+        "value": ""
+      },
+      {
+        "label": "r5d.24xlarge",
+        "value": ""
+      },
+      {
+        "label": "c5.18xlarge",
+        "value": ""
+      },
+      {
+        "label": "c5n.18xlarge",
+        "value": ""
+      },
+      {
+        "label": "c5.24xlarge",
+        "value": ""
+      },
+      {
+        "label": "c5d.24xlarge",
+        "value": ""
+      }
+    ]
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "Do you want to limit your job to Reserved Instance only? (force_ri)",
+    "description": "If force_ri is True, the job must ONLY run on Reserved Instance. If there is not enough RI, job will stay in the queue.",
+    "className": "form-control",
+    "name": "force_ri",
+    "values": [
+      {
+        "label": "No",
+        "value": "False",
+        "selected": true
+      },
+      {
+        "label": "Yes",
+        "value": "True"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "required": true,
+    "label": "How many CPUs do you want ? (cpus)",
+    "description": "Quantity of CPUs to allocate to the simulation. This will be used along with instance_type to calculate the quantity of nodes to provision",
+    "placeholder": "Quantity of EC2 instances will automatically be calculated based on Instance Type and CPU count",
+    "className": "form-control",
+    "name": "cpus",
+    "subtype": "text",
+    "maxlength": 255
+  },
+  {
+    "type": "text",
+    "required": true,
+    "label": "What is the ID for the instance AMI? (ami_id)<br>",
+    "description": "ID of AWS Machine Image to use for the job's nodes",
+    "placeholder": "ami-0000000000000000",
+    "className": "form-control",
+    "name": "ami_id",
+    "subtype": "text",
+    "maxlength": 32
+  },
+  {
+    "type": "text",
+    "required": true,
+    "label": "Job Name (job_name)",
+    "placeholder": "Do not use spaces",
+    "className": "form-control",
+    "name": "job_name",
+    "subtype": "text",
+    "maxlength": 255
+  },
+  {
+    "type": "text",
+    "required": true,
+    "label": "Input location (input_file)",
+    "description": "The file selected for processing by this job. A .zip file will be extracted into scratch. A .conf file will cause its parent directory to be copied to scratch.",
+    "placeholder": "(Do not delete) This entry will automatically be pre-populated with the absolute path of the input file.",
+    "className": "form-control",
+    "name": "input_file",
+    "subtype": "text",
+    "maxlength": 255
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "What queue do you want to use? (queue_name)",
+    "description": "Select the queue for this job. The queue configuration will affect how the job is scheduled.",
+    "className": "form-control",
+    "name": "queue_name",
+    "values": [
+      {
+        "label": "Low Priority",
+        "value": "low",
+        "selected": true
+      },
+      {
+        "label": "Normal Priority",
+        "value": "normal"
+      },
+      {
+        "label": "High Priority",
+        "value": "high"
+      },
+      {
+        "label": "Always On",
+        "value": "alwayson"
+      }
+    ]
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "Do you want to limit how long the job will be running? (wall_time)",
+    "description": "Select the maximum amount of time that this job will be allowed to execute.",
+    "className": "form-control",
+    "name": "wall_time",
+    "values": [
+      {
+        "label": "No more than 1 hour",
+        "value": "01:00:00",
+        "selected": true
+      },
+      {
+        "label": "No more than 4 hours",
+        "value": "04:00:00"
+      },
+      {
+        "label": "No more than 8 hours",
+        "value": "08:00:00"
+      },
+      {
+        "label": "No more than 12 hours",
+        "value": "12:00:00"
+      },
+      {
+        "label": "No more than 1 day",
+        "value": "24:00:00"
+      },
+      {
+        "label": "No more than 1 week",
+        "value": "168:00:00"
+      },
+      {
+        "label": "No more than 1 month",
+        "value": "740:00:00"
+      }
+    ]
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "How much scratch storage do you want? (scratch_opts)<br>",
+    "description": "Select the type and size of scratch storage to allocate. If multiple nodes are specified,  choose FSx for Lustre or EFS. FSx for Lustre is mounted as /fsx, EBS is mounted as /scratch.",
+    "className": "form-control",
+    "name": "scratch_opts",
+    "values": [
+      {
+        "label": "EFS - Don't allocate scratch",
+        "value": "-l ht_support=False",
+        "selected": true
+      },
+      {
+        "label": "FSx for Lustre - 1.2TB",
+        "value": "-l fsx_lustre=True,fsx_lustre_size=1200,fsx_lustre_deployment_type=scratch_2"
+      },
+      {
+        "label": "FSx for Lustre - 7.2TB",
+        "value": "-l fsx_lustre=True,fsx_lustre_size=7200,fsx_lustre_deployment_type=scratch_2"
+      },
+      {
+        "label": "FSx for Lustre - 14.4TB",
+        "value": "-l fsx_lustre=True,fsx_lustre_size=14400,fsx_lustre_deployment_type=scratch_2"
+      },
+      {
+        "label": "EBS gp2 - 32GB",
+        "value": "-l scratch_size=32"
+      },
+      {
+        "label": "EBS gp2 - 128GB",
+        "value": "-l scratch_size=32"
+      },
+      {
+        "label": "EBS io1 - 128GB, 1000 IOPS",
+        "value": "-l scratch_size=128,scratch_iops=1000"
+      },
+      {
+        "label": "EBS io1 - 256GB, 2000 IOPS",
+        "value": "-l scratch_size=256,scratch_iops=2000"
+      }
+    ]
+  },
+  {
+    "type": "header",
+    "subtype": "h5",
+    "label": "Advanced Job Parameters<br>"
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "Do you want EFA support? (efa_support)<br>",
+    "description": "Elastic Fabric Adapter is only available for c5n.18xlarge and r5n.24xlarge instance types",
+    "className": "form-control",
+    "name": "efa_support",
+    "values": [
+      {
+        "label": "No",
+        "value": "False",
+        "selected": true
+      },
+      {
+        "label": "Yes",
+        "value": "True"
+      }
+    ]
+  },
+  {
+    "type": "textarea",
+    "required": false,
+    "label": "Additional PBS Directives (additional_pbs_opts)<br>",
+    "description": "Start each line with #PBS to specify additional directives to qsub",
+    "placeholder": "#PBS -l fsx_lustre=some.fsxlustre.dns.name",
+    "className": "form-control",
+    "name": "additional_pbs_opts",
+    "subtype": "textarea",
+    "rows": 4
+  },
+  {
+    "type": "text",
+    "required": false,
+    "label": "Custom scratch directory (custom_scratch_path)<br>",
+    "description": "Specify the path for OpenFOAM to store its temporary and output files. Typically used with persistent lustre.",
+    "className": "form-control",
+    "name": "custom_scratch_path",
+    "subtype": "text"
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "Copy input to scratch? (copy_out)<br>",
+    "description": "If selected, the input path will be copied to the job's scratch directory before executing the selected script.",
+    "className": "form-control",
+    "name": "copy_out",
+    "values": [
+      {
+        "label": "Yes",
+        "value": "1"
+      },
+      {
+        "label": "No",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "Copy scratch to job directory? (copy_back)<br>",
+    "description": "If selected, the scratch directory will be copied to the job's output directory after script completion.",
+    "className": "form-control",
+    "name": "copy_back",
+    "values": [
+      {
+        "label": "Yes",
+        "value": "1",
+        "selected": true
+      },
+      {
+        "label": "No",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "required": false,
+    "label": "Paths to export from FSx (fsx_export_paths)<br>",
+    "description": "Comma separated list of paths, relative to /fsx, that should be exported. This requires the FSx filesystem to be configured with a backend.",
+    "className": "form-control",
+    "name": "fsx_export_paths",
+    "subtype": "text"
+  },
+  {
+    "type": "header",
+    "subtype": "h4",
+    "label": "Application parameters"
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "What version of OpenFOAM do you want to use ? (openfoam_location)",
+    "description": "Path to the OpenFOAM installation.",
+    "className": "form-control",
+    "name": "openfoam_location",
+    "values": [
+      {
+        "label": "OpenFOAM-7",
+        "value": "/opt/aws-workshops/openfoam/impi/latest/OpenFOAM-7",
+        "selected": true
+      },
+      {
+        "label": "OpenFOAM-7 copy",
+        "value": "/opt/aws-workshops/openfoam/impi/latest/OpenFOAM-7"
+      }
+    ]
+  },
+  {
+    "type": "select",
+    "required": true,
+    "label": "When version of IMPI do you want to use? (impi_location)<br>",
+    "description": "Path to the IMPI installation.  bin should be a subdirectory of this path.",
+    "className": "form-control",
+    "name": "impi_location",
+    "values": [
+      {
+        "label": "IMPI 2020.1.217",
+        "value": "/opt/intel/impi/2019.7.217/intel64",
+        "selected": true
+      },
+      {
+        "label": "IMPI 2020.1.217 copy",
+        "value": "/opt/intel/impi/2019.7.217/intel64"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "required": false,
+    "label": "Path to Script (script_path)<br>",
+    "description": "Path to the script that should execute, including parent directories relative to the input file's path. May be specified by the .conf file or overriden here",
+    "placeholder": "modeldir/script",
+    "className": "form-control",
+    "name": "script_path",
+    "subtype": "text",
+    "maxlength": 128
+  },
+  {
+    "type": "text",
+    "required": false,
+    "label": "Script Parameters (script_parameters)<br>",
+    "description": "Parameters to pass to the script. May be specified by the .conf file or overriden here",
+    "placeholder": "--param1 foo --param2 bar",
+    "className": "form-control",
+    "name": "script_parameters",
+    "subtype": "text",
+    "maxlength": 256
+  },
+  {
+    "type": "radio-group",
+    "required": true,
+    "label": "Preserve processor directories? (preserve_processor_dirs)<br>",
+    "description": "Select No to remove processor directories. Processor directories contain the data for the decomposed model.  Removing these reduces the size of a copy back, but may lose data required for post processing.",
+    "inline": false,
+    "name": "preserve_processor_dirs",
+    "other": false,
+    "values": [
+      {
+        "label": "Yes",
+        "value": "1",
+        "selected": true
+      },
+      {
+        "label": "No",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "type": "radio-group",
+    "required": true,
+    "label": "Create Zip Archive of Scratch (archive_scratch)<br>",
+    "description": "If selected, a zip of the scratch directory will be created. This is to facilitate downloading the results.",
+    "inline": false,
+    "name": "archive_scratch",
+    "other": false,
+    "values": [
+      {
+        "label": "Yes",
+        "value": "1"
+      },
+      {
+        "label": "No",
+        "value": "0",
+        "selected": true
+      }
+    ]
+  }
+]
