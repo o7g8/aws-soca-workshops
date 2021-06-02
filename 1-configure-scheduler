@@ -79,6 +79,11 @@ SQL_BK="$(mktemp db.sqlite.XXXXX)"
 echo "Backup db.sqlite to $SQL_BK"
 cp db.sqlite "$SQL_BK" || exit 1
 
+#echo "Generate OpenFOAM application profile"
+#pushd "$SCRIPT_DIR/openfoam/profiles/openfoam/"
+#./generate_profile.sh
+#popd
+
 echo "Load OpenFOAM application profile to SOCA"
 "$SCRIPT_DIR/soca/import_app_profile" "$SCRIPT_DIR/openfoam/profiles/openfoam/profile.csv" "$SUDO_USER" || exit 1
 
