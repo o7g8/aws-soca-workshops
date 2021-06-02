@@ -357,13 +357,13 @@
     "name": "impi_location",
     "values": [
       {
-        "label": "IMPI 2020.1.217",
-        "value": "/opt/intel/impi/2019.7.217/intel64",
+        "label": "Intel OneAPI MPI 2021.2.0.215",
+        "value": "/opt/intel/mpi/2021.2.0",
         "selected": true
       },
       {
-        "label": "IMPI 2020.1.217 copy",
-        "value": "/opt/intel/impi/2019.7.217/intel64"
+        "label": "Intel OneAPI MPI 2021.2.0.215 copy",
+        "value": "/opt/intel/mpi/2021.2.0"
       }
     ]
   },
