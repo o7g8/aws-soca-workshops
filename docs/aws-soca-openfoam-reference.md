@@ -98,8 +98,7 @@ instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
 2. Click on "Linux Desktop"
 3. Choose Session Type "3D - Small" (or a smaller session if capacity doesn't allow).
 4. Click "Software Stack" and choose your custom AMI (OpenFOAM).
-5. Adjust the Storage Size to 50Gb or more if needed.
-6. Launch the session.
+5. Launch the session.
 
 # Launch FreeCAD
 
@@ -111,7 +110,7 @@ instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
 
 1. `cp -r /apps/aws-workshops/openfoam/models/A320 $HOME`
 1. In SOCA User Interface, click Submit Job (Web).
-2. Select A320/A320-mesh.conf as the input file.
+2. Select `A320/A320-mesh.conf` as the input file.
 3. In "What software do you want to run?", select OpenFOAM.
 4. Complete the submission form. For simplicity of this example, use the default settings except for the following:
     1. Instance type 'Mesh Medium' is recommended.
@@ -122,7 +121,7 @@ instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
     for the newly created job with state 'Queued'.
 6. After about 7 minutes, the job should enter a state of 'Running'. The job should take about
     12 minutes to complete, depending upon the number of CPUs selected.
-    1. Job progress can by monitored via `soca_job_output/JOB_ID/log.all`. This path
+    1. Job progress can by monitored via `soca_job_output/JOB_ID/log.all` (see "My Files" section in the SOCA UI). This path
        will not exist until the job is Running.
 7. Once the job completes, the PBS log is available in `soca_job_output/logs/JOB_ID.OU`
 

@@ -1,0 +1,8 @@
+#!/bin/bash
+#PBS -N testjob
+#PBS -V -j oe -o hello_world_c5large.qlog
+#PBS -P myproject
+#PBS -q normal
+#PBS -l nodes=1,instance_type=c5.large
+/bin/echo "Hello World"
+

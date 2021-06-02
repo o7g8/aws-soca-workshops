@@ -1,0 +1,8 @@
+#!/bin/bash
+#PBS -N testjob
+#PBS -V -j oe -o hello_world.qlog
+#PBS -P myproject
+#PBS -q normal
+#PBS -l nodes=1
+/bin/echo "Hello World"
+
