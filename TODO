@@ -1,6 +1,8 @@
 * [DONE] build-openfoam - build the OpenFOAM.
 * [DONE] configure-temporary-machine-for-ami: make it work with the newly built OpenFOAM.
 * [DONE] configure-temporary-machine-for-ami: Upgrade FreeCAD to https://github.com/FreeCAD/FreeCAD/releases/tag/0.19.2
-* Make a working OpenFOAM application profile which allows to start OpenFOAM PBS jobs from WebUI.
+* [DONE] Make a working OpenFOAM application profile which allows to start OpenFOAM PBS jobs from WebUI.
+* Install OpenGL3.2 or later.
 * Create a test PBS job to smoke test OpenFOAM.
 * build-openfoam, configure-temporary-machine-for-ami: Upgrade OpenFOAM from https://github.com/OpenFOAM/OpenFOAM-7/tags to https://github.com/OpenFOAM/OpenFOAM-8/releases
+* Create a custom parameter AZ/Subnet in the Desktops

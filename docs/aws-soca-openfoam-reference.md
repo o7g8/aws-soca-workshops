@@ -142,16 +142,16 @@ instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
 5. Click 'Submit Job'. The current job queue will be displayed, and will contain an entry
     for the newly created job with state 'Queued'.
 6. After about 7 minutes, the job should enter a state of 'Running'. The job should take about
-    12 minutes to complete, depending upon the number of CPUs selected.
+    26 minutes to complete, depending upon the number of CPUs selected.
     1. Job progress can by monitored via `soca_job_output/JOB_ID/log.all`. This path
        will not exist until the job is Running.
 7. Once the job completes, the PBS log is available in `soca_job_output/logs/JOB_ID.OU`
 
 # Launch ParaView
 
-1. Login to a desktop session.
+1. Login to your visualization session started earlier (it must be a GPU Workstation).
 2. Click on Applications -> System Tools -> Terminal
-3. Change directory to a processed model directory. e.g `$ cd ~/soca_job_output/3.ip-10-0-26-16/motorbike-simple/motorBike-mesh `
+3. Change directory to a processed model directory. e.g `$ cd ~/soca_job_output/3.ip-10-0-26-16/A320/A320-mesh `
 4. Launch ParaView: `$ /opt/aws-workshops/bin/runParaFoam -builtin`
 
 # OpenFOAM Application
