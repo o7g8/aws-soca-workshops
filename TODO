@@ -2,7 +2,101 @@
 * [DONE] configure-temporary-machine-for-ami: make it work with the newly built OpenFOAM.
 * [DONE] configure-temporary-machine-for-ami: Upgrade FreeCAD to https://github.com/FreeCAD/FreeCAD/releases/tag/0.19.2
 * [DONE] Make a working OpenFOAM application profile which allows to start OpenFOAM PBS jobs from WebUI.
-* Install OpenGL3.2 or later.
+* ParaView: Install OpenGL3.2 or later.
 * Create a test PBS job to smoke test OpenFOAM.
 * build-openfoam, configure-temporary-machine-for-ami: Upgrade OpenFOAM from https://github.com/OpenFOAM/OpenFOAM-7/tags to https://github.com/OpenFOAM/OpenFOAM-8/releases
 * Create a custom parameter AZ/Subnet in the Desktops
+
+OpenGL installation:
+
+Linux install:
+* NVIDIA: Installed drivers as described in https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-nvidia-driver.html#nvidia-GRID-driver
+* NVIDIA: executed from https://docs.aws.amazon.com/dcv/latest/adminguide/setting-up-installing-linux-prereq.html#linux-prereq-tools 
+    * sudo nvidia-xconfig --preserve-busid —enable-all-gpus —connected-monitor=DFP-0,DFP-1,DFP-2,DFP-3
+* (don't do this) DCV: https://docs.aws.amazon.com/dcv/latest/adminguide/setting-up-installing-linux-server.html
+    ```bash
+    sudo rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY
+    wget https://d1uj6qtbmh3dt5.cloudfront.net/2021.1/Servers/nice-dcv-2021.1-10557-el7-x86_64.tgz
+    tar xf nice-dcv-2021.1-10557-el7-x86_64.tgz
+    cd nice-dcv-2021.1-10557-el7-x86_64
+    sudo yum install nice-dcv-server-2021.1.10557-1.el7.x86_64.rpm
+    sudo yum install nice-xdcv-2021.1.392-1.el7.x86_64.rpm
+    sudo yum install nice-dcv-gl-2021.1.937-1.el7.x86_64.rpm
+    sudo yum install nice-dcv-gltest-2021.1.275-1.el7.x86_64.rpm
+    # the dcv and xserver were upgraded and gl/gltest were installed
+    sudo dcvgldiag
+    # reboot -> glxinfo starts to crash with
+    # name of display: :1
+    # Segmentation fault
+    sudo dcvgladmin disable
+    sudo dcvgladmin enable
+    sudo dcvgldiag
+    # did In case there is no monitor connected to the video card adapter associated to DISPLAY=":1.0", you may need to add the "UseDisplayDevice" "none" option to the appropriate "Device" section (of the '/etc/X11/xorg.conf' file
+    # set Option "UseDisplayDevice" "none"
+    # reboot
+    ```
+The 
+sudo DISPLAY=:0 XAUTHORITY=$(ps aux | grep "X.*\-auth" | grep -v grep | sed -n 's/.*-auth \([^ ]\+\).*/\1/p') glxinfo | grep -i "opengl.*version"
+should return NVIDIA, but returns Mesa.
+
+See https://www.reddit.com/r/Fedora/comments/d1tf5v/nvidia_prime_worked_out_of_the_box/
+ I just need to add __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia before the command.
+
+For Vulkan, only __NV_PRIME_RENDER_OFFLOAD=1 is needed.
+
+Try  __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo
+
+
+[     8.736] (II) Loading sub module "glxserver_nvidia"
+[     8.736] (II) LoadModule: "glxserver_nvidia"
+[     8.736] (II) Loading /usr/lib64/xorg/modules/extensions/libglxserver_nvidia
+.so
+[     8.744] (II) Module glxserver_nvidia: vendor="NVIDIA Corporation"
+[     8.744]    compiled for 1.6.99.901, module version = 1.0.0
+[     8.744]    Module class: X.Org Server Extension
+[     8.744] (II) NVIDIA GLX Module  460.73.01  Thu Apr  1 21:35:16 UTC 2021
+[     8.744] (II) NVIDIA: The X server does not support PRIME Render Offload.
+[     8.744] (EE) NVIDIA(GPU-0): UseDisplayDevice "None" is not supported with GRID
+[     8.744] (EE) NVIDIA(GPU-0):     displayless
+[     8.744] (EE) NVIDIA(GPU-0): Failed to select a display subsystem.
+[     8.745] (EE) NVIDIA(0): Failing initialization of X screen
+[     8.745] (II) UnloadModule: "nvidia"
+[     8.745] (II) UnloadSubModule: "glxserver_nvidia"
+[     8.745] (II) Unloading glxserver_nvidia
+
+
+I have removed the Option "UseDisplayDevice" "none" from /etc/X11/xorg.conf
+According to /var/log/Xorg.0.log all Nvidia modules (incl GLX load as expected)
+
+After that I got crash of glxinfo
+[oleg@ip-10-0-96-142 ~]$ sudo glxinfo
+[sudo] password for oleg: 
+name of display: :1
+Segmentation fault
+
+
+https://us.download.nvidia.com/tesla/460.73.01/NVIDIA-Linux-x86_64-460.73.01.run
+
+The solution is to find at what display the X server is running:
+```bash
+root      4025  0.0  0.1 273524 47012 tty1     Ssl+ 12:09   0:00 /usr/bin/X :0 -background none -noreset -audit 4 -verbose -auth /run/gdm/auth-for-gdm-QPC61B/database -seat seat0 -nolisten tcp vt1
+oleg      4154  0.4  0.2 606244 87120 ?        Sl   12:09   0:07 /usr/bin/Xdcv -sessionid f307e0df-2e05-4861-832a-4ca1b452e01a -auth /run/user/5001/dcv/f307e0df-2e05-4861-832a-4ca1b452e01a.xauth -displayfd 4 -output 800x600+0+0 -output 800x600+800+0 -output 800x600+1600+0 -output 800x600+2400+0 -enabledoutputs 1 -listen tcp -verbose 3 -dpi 96
+```
+In this case it's `:0` and set the `export DCV_GL_DISPLAY=:0`!
+
+So the short description of the solution:
+- install NVIDIA GRID drivers
+- install DCV: nice-dcv-server, nice-xdcv, nice-dcv-gl
+- reboot
+- find on what display X server is running (:0)
+- set the `export DCV_GL_DISPLAY=:0` to the same display
+- P.S.: the SOCA runs "virtual" (contra console) sessions and they require nice-dcv-gl (it forwards OpenGL to X server OpenGL) which in turn requires "mapping" to a correct DISPLAY.
+
+soca_job_output/17.ip-10-0-0-49/A320/A320-mesh
+
+Check if the NVIDIA drivers are installed:
+The virtual DCV session is started in: 
+/apps/soca/soca-2/cluster_node_bootstrap/ComputeNodeInstallDCV.sh
+
+/apps/soca/soca-2/cluster_node_bootstrap/ComputeNodePostReboot.sh:    /bin/bash /apps/soca/$SOCA_CONFIGURATION/cluster_node_bootstrap/ComputeNodeInstallDCV.sh >> $SOCA_HOST_SYSTEM_LOG/ComputeNodeInstallDCV.log 2>&1
+
