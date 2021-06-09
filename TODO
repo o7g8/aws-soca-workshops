@@ -4,18 +4,26 @@
 * [DONE] Make a working OpenFOAM application profile which allows to start OpenFOAM PBS jobs from WebUI.
 * [DONE] ParaView: Install OpenGL3.2 or later.
     - /apps/soca/soca-2/cluster_node_bootstrap/ComputeNodeInstallDCV.sh[10] - add `g3s`
+    - /apps/soca/soca-2/cluster_node_bootstrap/ComputeNode.sh[243] - add `g3s`
     - (optional) update the DCV version in config.cfg https://github.com/awslabs/scale-out-computing-on-aws/blob/8861c0c6c8b227852754f02cd6db316f00790890/source/scripts/config.cfg
     - In ParaView - on lefthand box - uncheck all checkboxes and leave only A320.
-* Create a test PBS job to smoke test OpenFOAM.
+* Create a proper Aerospace branch of SOCA tags/2.6.1 with my fixes. 
+* Create a test PBS job to smoke test OpenFOAM after build.
 * build-openfoam, configure-temporary-machine-for-ami: Upgrade OpenFOAM from https://github.com/OpenFOAM/OpenFOAM-7/tags to https://github.com/OpenFOAM/OpenFOAM-8/releases
 * Contact Michael Crozes regarding AZ selector - Create a custom parameter AZ/Subnet in the Desktops
 * EC2 Image Builder:
+    - build with CDK https://www.youtube.com/watch?v=WfeW2pe1pdA
     * OpenFOAM Tests:
         * /opt/aws-workshops/openfoam/impi/build-openfoam-20210525-211824/OpenFOAM-7/tutorials/incompressible/simpleFoam
         * -windAroundBuildings
+            have OpenFOAM in $PATH
+            openfoam Allrun  
+            watch YT vide about it.
         * -motorBike
 * Support AMD instances (g4ad, 28% savings compared to g4dn):
     - Install RADEON drivers https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-amd-driver.html
     - Will it need a separate OpenFOAM/ParaView build (w/o Nvidia libraries)?
     - Intel MPI should work https://prace-ri.eu/wp-content/uploads/Best-Practice-Guide_AMD.pdf
 * Does SOCA support spot (with jobs restart if failed)?
+* HA: does SOCA support master node failover?
+* SOCA master deployed as a container?

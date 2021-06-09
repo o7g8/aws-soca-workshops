@@ -153,6 +153,15 @@ instructions for downloading A320-tutorial-OpenFOAM-17.10.zip
 2. Click on Applications -> System Tools -> Terminal
 3. Change directory to a processed model directory. e.g `$ cd ~/soca_job_output/3.ip-10-0-26-16/A320/A320-mesh `
 4. Launch ParaView: `$ /opt/aws-workshops/bin/runParaFoam -builtin`
+8. In the left-side panel `Mesh Regions` select only `A320`. Click on `Apply` above. You should see mesh of A320.
+5. You can also see the stationary case in ParaView.
+6. Go to directory with the results of stationary case calculations `cd ~/soca_job_output/JOB_ID.OU/A320/A320-case-stationary`
+7. Launch ParaView `soca_job_output/18.ip-10-0-0-49/A320/A320-case-stationary`
+8. In the left-side panel `Mesh Regions` select only `A320`. Click on `Apply` above.
+9. Click on `Edit Color Map` (2nd item in the 2nd toolbar).
+10. In the `Color Map Editor` panel on the right side select icon `Rescale to custom range` (2nd icon in the `Mapping Data` section).
+11. Enter range `-3000`, `3000` and press `Rescale and disable automatic rescaling`. You should see pressure distribution on A320.
+
 
 # OpenFOAM Application
 
