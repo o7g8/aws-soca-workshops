@@ -1,0 +1,121 @@
+#!/bin/bash
+#
+
+# Master SG: Allow samba ports 137-138/udp, 139,445/tcp for Compute!!!
+# Compute SG: Allow all traffic with Master!
+
+echo "Installing Samba.."
+sudo yum install -y samba || exit 1
+cp -pf /etc/samba/smb.conf /etc/samba/smb.conf.bak || exit 1
+cp smb.conf /etc/samba/smb.conf || exit 1
+
+# OBS! Issues:
+# 1) need to use LDAP users not root; 
+# 2) smbpasswd is interactive; 
+# 3) windows has to mount the share automatically
+useradd dodo2 || exit 1
+smbpasswd -a dodo2 || exit 1
+
+service smb.service stop 
+service nmb.service stop
+sleep 3
+service smb.service start || exit 1 
+service nmb.service stop || exit 1
+
+exit 0
+
+echo "Installing SMB LDAP"
+amazon-linux-extras install -y epel || exit 1
+yum install -y smbldap-tools || exit 1
+ldapadd -Q -Y EXTERNAL -H ldapi:/// -f /usr/share/doc/samba-4.10.16/LDAP/samba.ldif || exit 1
+cat << EOM > samba_indices.ldif
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+replace: olcDbIndex
+olcDbIndex: objectClass eq
+olcDbIndex: uidNumber,gidNumber eq
+olcDbIndex: loginShell eq
+olcDbIndex: uid,cn eq,sub
+olcDbIndex: memberUid eq,sub
+olcDbIndex: member,uniqueMember eq
+olcDbIndex: sambaSID eq
+olcDbIndex: sambaPrimaryGroupSID eq
+olcDbIndex: sambaGroupType eq
+olcDbIndex: sambaSIDList eq
+olcDbIndex: sambaDomainName eq
+olcDbIndex: default sub,eq
+EOM
+ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f samba_indices.ldif || exit 1
+
+smbldap-config
+#writes:   /etc/smbldap-tools/smbldap.conf,  /etc/smbldap-tools/smbldap_bind.conf done.
+# used password from /root/OpenLdapAdminPassword.txt (XKKHfkn4)
+smbldap-populate -g 5001 -u 5001 -r 5001
+# used password from /root/OpenLdapAdminPassword.txt (XKKHfkn4)
+smbpasswd -W
+service smb.service restart || exit 1
+service nmb.service restart || exit 1
+
+# In the end the  sudo net getlocalsid soca doesn't work (TLS error)
+# same TLS error with
+# sudo smbpasswd -a oleg2
+# Failed to add entry for user oleg2.
+# I was able to add samba user after adding unix user. But windows complains the password is wrong
+
+. workgroup name: name of the domain Samba acts as a PDC for
+  workgroup name [SOCA] > 
+. netbios name: netbios name of the samba controller
+  netbios name [] > soca
+. logon drive: local path to which the home directory will be connected (for NT Workstations). Ex: 'H:'
+  logon drive [] > H:
+. logon home: home directory location (for Win95/98 or NT Workstation).
+  (use %U as username) Ex:'\\soca\%U'
+  logon home (press the "." character if you don't want homeDirectory) [\\soca\%U] > .
+. logon path: directory where roaming profiles are stored. Ex:'\\soca\profiles\%U'
+  logon path (press the "." character if you don't want roaming profiles) [\\soca\profiles\%U] > .
+. home directory prefix (use %U as username) [/home/%U] > /data/home/%U
+. default users' homeDirectory mode [700] > 
+. default user netlogon script (use %U as username) [] > 
+. default password validation time (time in days) [45] > 
+. ldap suffix [] > dc=soca,dc=local
+. ldap group suffix [] > ou=Group
+. ldap user suffix [] > ou=People
+. ldap machine suffix [] > ou=Computers
+. Idmap suffix [ou=Idmap] > 
+. sambaUnixIdPooldn: object where you want to store the next uidNumber
+  and gidNumber available for new users and groups
+  sambaUnixIdPooldn object (relative to ${suffix}) [sambaDomainName=SOCA] > 
+. ldap master server: IP address or DNS name of the master (writable) ldap server
+  ldap master server [127.0.0.1] > 
+. ldap master port [389] > 
+. ldap master bind dn [] > cn=admin,dc=soca,dc=local 
+. ldap master bind password [] > 
+. ldap slave server: IP address or DNS name of the slave ldap server: can also be the master one
+  ldap slave server [127.0.0.1] > 
+. ldap slave port [389] > 
+. ldap slave bind dn [] > cn=admin,dc=soca,dc=local
+. ldap slave bind password [] > 
+. ldap tls support (1/0) [0] > 1
+. How to verify the server's certificate (none, optional or require) [require] > none
+. CA certificate file [/etc/smbldap-tools/ca.pem] > 
+. certificate to use to connect to the ldap server [/etc/smbldap-tools/smbldap-tools.pem] > 
+. key certificate to use to connect to the ldap server [/etc/smbldap-tools/smbldap-tools.key] > 
+. SID for domain SOCA: SID of the domain (can be obtained with 'net getlocalsid soca')
+  SID for domain SOCA [S-1-5-21-1150437270-2189545136-44719505] > 
+. unix password hash: hash used for unix passwords
+  If set to "exop", use LDAPv3 Password Modify (RFC 3062) extended operation.
+  unix password hash (CRYPT, MD5, SMD5, SSHA, SHA, CLEARTEXT) [SSHA] > 
+. default user gidNumber [513] > 
+. default computer gidNumber [515] > 
+. default login shell [/bin/bash] > 
+. default skeleton directory [/etc/skel] > 
+. default domain name to append to mail address [] > 
+. treat shadowAccount object or not (1/0) [1] > 
+
+# guest account is disabled
+# https://ubuntu.com/server/docs/samba-openldap-backend
+# /usr/share/doc/samba-4.10.16/LDAP/samba.ldif 
+# https://vmbs.uk/t/setup-samba-on-openldap/60
+
+# in Windows
+# net use M: \\10.0.0.49\share
