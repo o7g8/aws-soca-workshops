@@ -11,7 +11,7 @@ wget https://registrationcenter-download.intel.com/akdlm/irc_nas/17764/l_HPCKit_
 Configure the build machine:
 
 ```bash
-./configure-build-machine l_HPCKit_p_2021.2.0.2997_offline.sh --accept-eula
+sudo ./configure-build-machine l_HPCKit_p_2021.2.0.2997_offline.sh --accept-eula
 ```
 
 Build OpenFOAM:
